@@ -14,3 +14,7 @@ class TaskNotFoundException extends TaskException {
 class TaskStorageException extends TaskException {
   TaskStorageException(super.message);
 }
+
+class InvalidInputException extends TaskException {
+  InvalidInputException(super.message);
+}

@@ -5,6 +5,7 @@ import 'package:task_gest/src/models/priority.dart';
 import 'package:task_gest/src/models/urgent_task.dart';
 import 'package:task_gest/src/services/task_service.dart';
 import 'package:task_gest/src/repositories/task_repository.dart';
+import 'package:task_gest/src/errors/task_exception.dart';
 
 Future<void> main(List<String> arguments) async {
   TaskService<UrgentTask> createTaskService() {
@@ -35,47 +36,55 @@ Future<void> main(List<String> arguments) async {
 
     switch (choice) {
       case 1:
-        print("Adding a new task...");
-        print("Add a title:");
-        String title = stdin.readLineSync() ?? '';
-        print("Add a due date (YYYY-MM-DD) or leave empty for no due date:");
-        String dueDateInput = stdin.readLineSync() ?? '';
-        DateTime? dueDate;
-        if (dueDateInput.isNotEmpty) {
-          try {
-            dueDate = DateTime.parse(dueDateInput);
-          } catch (e) {
-            print("Invalid date format. Please use YYYY-MM-DD.");
-            break;
+        try {
+          print("Adding a new task...");
+          print("Add a title:");
+          String title = stdin.readLineSync() ?? '';
+          print("Add a due date (YYYY-MM-DD) or leave empty for no due date:");
+          String dueDateInput = stdin.readLineSync() ?? '';
+          DateTime? dueDate;
+          if (dueDateInput.isNotEmpty) {
+            try {
+              dueDate = DateTime.parse(dueDateInput);
+            } catch (e) {
+              throw InvalidInputException(
+                'Invalid date format. Please use YYYY-MM-DD.',
+              );
+            }
           }
+          print("add a priority (low, medium, high):");
+          String priorityInput = stdin.readLineSync() ?? '';
+          Priority? priority;
+          switch (priorityInput.toLowerCase()) {
+            case 'low':
+              priority = Priority.low;
+              break;
+            case 'medium':
+              priority = Priority.medium;
+              break;
+            case 'high':
+              priority = Priority.high;
+              break;
+            default:
+              throw InvalidInputException(
+                'Invalid priority. Please choose low, medium, or high.',
+              );
+          }
+
+          UrgentTask newTask = UrgentTask(
+            title: title,
+            dueDate: dueDate,
+            priority: priority,
+          );
+          await service.addTask(newTask);
+          print("Task added successfully!");
+        } on InvalidInputException catch (e) {
+          print('Input error: ${e.message}');
+        } on TaskException catch (e) {
+          print('Task error: ${e.message}');
+        } catch (e) {
+          print('Error: ${e.toString()}');
         }
-        print("add a priority (low, medium, high):");
-        String priorityInput = stdin.readLineSync() ?? '';
-        Priority? priority;
-        switch (priorityInput.toLowerCase()) {
-          case 'low':
-            priority = Priority.low;
-            break;
-          case 'medium':
-            priority = Priority.medium;
-            break;
-          case 'high':
-            priority = Priority.high;
-            break;
-          default:
-            print("Invalid priority. Please choose low, medium, or high.");
-            break;
-        }
-        if (priority == null) {
-          break;
-        }
-        UrgentTask newTask = UrgentTask(
-          title: title,
-          dueDate: dueDate,
-          priority: priority,
-        );
-        await service.addTask(newTask);
-        print("Task added successfully!");
         break;
       case 2:
         print("List all tasks:");
@@ -109,10 +118,12 @@ Future<void> main(List<String> arguments) async {
         try {
           final taskToMark = service.tasks.firstWhere(
             (task) => task.title == title,
-            orElse: () => throw Exception('Task not found'),
+            orElse: () => throw TaskNotFoundException('Task not found'),
           );
           await service.markTaskAsCompleted(taskToMark);
           print("Task ${taskToMark.title} marked as completed!");
+        } on TaskException catch (e) {
+          print('Task error: ${e.message}');
         } catch (e) {
           print('Error: ${e.toString()}');
         }
@@ -124,10 +135,12 @@ Future<void> main(List<String> arguments) async {
         try {
           final taskToRemove = service.tasks.firstWhere(
             (task) => task.title == titleToRemove,
-            orElse: () => throw Exception('Task not found'),
+            orElse: () => throw TaskNotFoundException('Task not found'),
           );
           await service.removeTask(taskToRemove);
           print('Task ${taskToRemove.title} removed successfully.');
+        } on TaskException catch (e) {
+          print('Task error: ${e.message}');
         } catch (e) {
           print('Error: ${e.toString()}');
         }
