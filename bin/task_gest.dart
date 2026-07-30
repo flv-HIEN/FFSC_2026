@@ -21,25 +21,24 @@ Future<void> main(List<String> arguments) async {
   );
 
   int exit = 0;
-  while (exit != 4) {
+  while (exit != 5) {
     print("\nMenu:");
 
     print("1. Add a new task");
-    print("2. View all tasks by priority");
+    print("2. List all tasks");
     print("3. Mark a task as completed");
-    print("4. Exit");
+    print("4. Remove a task");
+    print("5. Exit");
     print("Votre choix...");
 
     int? choice = int.tryParse(stdin.readLineSync() ?? '-1');
-    stdout.write("");
 
     switch (choice) {
       case 1:
-        // Add a new task
         print("Adding a new task...");
-        print("add a Title");
+        print("Add a title:");
         String title = stdin.readLineSync() ?? '';
-        print("add a due date (YYYY-MM-DD) or leave empty for no due date");
+        print("Add a due date (YYYY-MM-DD) or leave empty for no due date:");
         String dueDateInput = stdin.readLineSync() ?? '';
         DateTime? dueDate;
         if (dueDateInput.isNotEmpty) {
@@ -47,12 +46,12 @@ Future<void> main(List<String> arguments) async {
             dueDate = DateTime.parse(dueDateInput);
           } catch (e) {
             print("Invalid date format. Please use YYYY-MM-DD.");
-            return;
+            break;
           }
         }
-        print("add a priority (low, medium, high)");
+        print("add a priority (low, medium, high):");
         String priorityInput = stdin.readLineSync() ?? '';
-        Priority priority;
+        Priority? priority;
         switch (priorityInput.toLowerCase()) {
           case 'low':
             priority = Priority.low;
@@ -65,7 +64,10 @@ Future<void> main(List<String> arguments) async {
             break;
           default:
             print("Invalid priority. Please choose low, medium, or high.");
-            return;
+            break;
+        }
+        if (priority == null) {
+          break;
         }
         UrgentTask newTask = UrgentTask(
           title: title,
@@ -76,49 +78,66 @@ Future<void> main(List<String> arguments) async {
         print("Task added successfully!");
         break;
       case 2:
-        // Add logic to view tasks by priority
-        print("Viewing tasks by priority...");
-        print("Choose a priority to filter tasks:");
-        String priorityInput = stdin.readLineSync() ?? '';
-        Priority priority;
-        switch (priorityInput.toLowerCase()) {
-          case 'low':
-            priority = Priority.low;
-            break;
-          case 'medium':
-            priority = Priority.medium;
-            break;
-          case 'high':
-            priority = Priority.high;
-            break;
-          default:
-            print("Invalid priority. Please choose low, medium, or high.");
-            return;
+        print("List all tasks:");
+        print("Choose a sort option: 1) priority, 2) due date");
+        final sortChoice = int.tryParse(stdin.readLineSync() ?? '-1');
+        List<UrgentTask>? tasksToShow;
+        if (sortChoice == 1) {
+          tasksToShow = service.getTasksSortedByPriority();
+        } else if (sortChoice == 2) {
+          tasksToShow = service.getTasksSortedByDate();
+        } else {
+          print("Invalid sort option.");
+          break;
         }
-        final tasks = service.getTasksByPriority(priority);
-        for (final task in tasks) {
-          print("- ${task.title} (${task.priority})");
+        if (tasksToShow.isEmpty) {
+          print('No tasks available.');
+          break;
+        }
+        for (final task in tasksToShow) {
+          final due = task.dueDate != null
+              ? task.dueDate!.toIso8601String()
+              : 'no due date';
+          final status = task.isCompleted ? 'completed' : 'pending';
+          print('- ${task.title} (${task.priority}, due: $due, $status)');
         }
         break;
       case 3:
         print("Marking a task as completed...");
-        // Add logic to mark a task as completed
         print("Enter the title of the task to mark as completed:");
         String title = stdin.readLineSync() ?? '';
-        final taskToMark = service.tasks.firstWhere(
-          (task) => task.title == title,
-          orElse: () => throw Exception('Task not found'),
-        );
-        await service.markTaskAsCompleted(taskToMark);
-        print("Task ${taskToMark.title} marked as completed!");
+        try {
+          final taskToMark = service.tasks.firstWhere(
+            (task) => task.title == title,
+            orElse: () => throw Exception('Task not found'),
+          );
+          await service.markTaskAsCompleted(taskToMark);
+          print("Task ${taskToMark.title} marked as completed!");
+        } catch (e) {
+          print('Error: ${e.toString()}');
+        }
         break;
       case 4:
+        print("Removing a task...");
+        print("Enter the title of the task to remove:");
+        String titleToRemove = stdin.readLineSync() ?? '';
+        try {
+          final taskToRemove = service.tasks.firstWhere(
+            (task) => task.title == titleToRemove,
+            orElse: () => throw Exception('Task not found'),
+          );
+          await service.removeTask(taskToRemove);
+          print('Task ${taskToRemove.title} removed successfully.');
+        } catch (e) {
+          print('Error: ${e.toString()}');
+        }
+        break;
+      case 5:
         print("Exiting the application. Goodbye!");
-        exit = 4;
+        exit = 5;
         break;
       default:
         print("Invalid option. Please choose a number from the menu.");
-        stdout.write('Votre choix : ');
     }
   }
 }

@@ -7,4 +7,6 @@ abstract class TaskServiceInterface<T extends Task> {
   Future<void> markTaskAsCompleted(T task);
   Future<void> removeTask(T task);
   List<T> getTasksByPriority(Priority priority);
+  List<T> getTasksSortedByPriority();
+  List<T> getTasksSortedByDate();
 }

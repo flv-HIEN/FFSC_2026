@@ -129,5 +129,78 @@ void main() {
       expect(highTasks, hasLength(1));
       expect(highTasks.first.title, equals('High task'));
     });
+
+    test('removeTask removes task and saves changes', () async {
+      final repository = TaskRepository<UrgentTask>(
+        UrgentTask.fromJson,
+        filePath,
+      );
+      final task = UrgentTask(title: 'Remove me', priority: Priority.medium);
+      await repository.saveTasks([task]);
+
+      final service = TaskService<UrgentTask>(repository);
+      await service.init();
+      await service.removeTask(task);
+
+      expect(service.tasks, isEmpty);
+      final loaded = await repository.loadTasks();
+      expect(loaded, isEmpty);
+    });
+
+    test(
+      'getTasksSortedByPriority returns tasks ordered by priority',
+      () async {
+        final repository = TaskRepository<UrgentTask>(
+          UrgentTask.fromJson,
+          filePath,
+        );
+        await repository.saveTasks([
+          UrgentTask(title: 'High', priority: Priority.high),
+          UrgentTask(title: 'Low', priority: Priority.low),
+          UrgentTask(title: 'Medium', priority: Priority.medium),
+        ]);
+
+        final service = TaskService<UrgentTask>(repository);
+        await service.init();
+
+        final sorted = service.getTasksSortedByPriority();
+        expect(sorted.map((task) => task.priority).toList(), [
+          Priority.low,
+          Priority.medium,
+          Priority.high,
+        ]);
+      },
+    );
+
+    test(
+      'getTasksSortedByDate orders tasks by due date with nulls last',
+      () async {
+        final repository = TaskRepository<UrgentTask>(
+          UrgentTask.fromJson,
+          filePath,
+        );
+        await repository.saveTasks([
+          UrgentTask(title: 'No date', priority: Priority.low),
+          UrgentTask(
+            title: 'Later date',
+            dueDate: DateTime(2026, 12, 31),
+            priority: Priority.medium,
+          ),
+          UrgentTask(
+            title: 'Earlier date',
+            dueDate: DateTime(2026, 1, 1),
+            priority: Priority.high,
+          ),
+        ]);
+
+        final service = TaskService<UrgentTask>(repository);
+        await service.init();
+
+        final sorted = service.getTasksSortedByDate();
+        expect(sorted[0].title, equals('Earlier date'));
+        expect(sorted[1].title, equals('Later date'));
+        expect(sorted[2].title, equals('No date'));
+      },
+    );
   });
 }
