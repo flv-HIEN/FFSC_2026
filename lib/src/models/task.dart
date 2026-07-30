@@ -26,5 +26,18 @@ abstract class Task {
     return 'Task(title: $title, dueDate: $dueDate, priority: $priority, status: $status)';
   }
 
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is Task &&
+        other.title == title &&
+        other.dueDate == dueDate &&
+        other.isCompleted == isCompleted &&
+        other.priority == priority;
+  }
+
+  @override
+  int get hashCode => Object.hash(title, dueDate, isCompleted, priority);
+
   Map<String, dynamic> toJson();
 }
