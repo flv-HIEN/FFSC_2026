@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:math';
 
 import 'package:test/test.dart';
 import 'package:task_gest/src/models/priority.dart';
@@ -28,7 +29,12 @@ void main() {
   });
 
   group('TaskRepository', () {
-    const filePath = 'test_tasks.json';
+    late String filePath;
+
+    setUp(() {
+      filePath =
+          'test_tasks_${DateTime.now().microsecondsSinceEpoch}_${Random().nextInt(1 << 32)}.json';
+    });
 
     tearDown(() {
       final file = File(filePath);
@@ -69,7 +75,12 @@ void main() {
   });
 
   group('TaskService', () {
-    const filePath = 'service_tasks.json';
+    late String filePath;
+
+    setUp(() {
+      filePath =
+          'service_tasks_${DateTime.now().microsecondsSinceEpoch}_${Random().nextInt(1 << 32)}.json';
+    });
 
     tearDown(() {
       final file = File(filePath);

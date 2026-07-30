@@ -18,6 +18,12 @@ class TaskService<T extends Task> implements TaskServiceInterface<T> {
 
   @override
   Future<void> addTask(T task) async {
+    if (task.title.trim().isEmpty) {
+      throw InvalidInputException(
+        'Le titre de la tâche ne peut pas être vide.',
+      );
+    }
+
     _tasks.add(task);
     await _taskRepository.saveTasks(tasks);
   }
@@ -74,8 +80,6 @@ class TaskService<T extends Task> implements TaskServiceInterface<T> {
         'Impossible de sauvegarder la tâche marquée comme terminée.',
       );
     }
-
-    print('Task "${task.title}" marked as completed.');
   }
 
   @override

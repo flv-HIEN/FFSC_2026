@@ -1,13 +1,14 @@
 //import 'package:task_gest/task_gest.dart';
 import 'dart:io';
-import 'package:task_gest/src/models/priority.dart';
 import 'package:task_gest/src/models/urgent_task.dart';
-import 'package:task_gest/src/services/task_service.dart';
 import 'package:task_gest/src/repositories/task_repository.dart';
+import 'package:task_gest/src/services/task_service.dart';
+import 'package:task_gest/src/services/task_service_interface.dart';
+import 'package:task_gest/src/utils/input_utils.dart';
 import 'package:task_gest/src/errors/task_exception.dart';
 
 Future<void> main(List<String> arguments) async {
-  TaskService<UrgentTask> createTaskService() {
+  TaskServiceInterface<UrgentTask> createTaskService() {
     final repository = FileTaskRepository<UrgentTask>(UrgentTask.fromJson);
     return TaskService<UrgentTask>(repository);
   }
@@ -38,39 +39,15 @@ Future<void> main(List<String> arguments) async {
         try {
           print("Adding a new task...");
           print("Add a title:");
-          String title = stdin.readLineSync() ?? '';
-          print("Add a due date (YYYY-MM-DD) or leave empty for no due date:");
-          String dueDateInput = stdin.readLineSync() ?? '';
-          DateTime? dueDate;
-          if (dueDateInput.isNotEmpty) {
-            try {
-              dueDate = DateTime.parse(dueDateInput);
-            } catch (e) {
-              throw InvalidInputException(
-                'Invalid date format. Please use YYYY-MM-DD.',
-              );
-            }
-          }
-          print("add a priority (low, medium, high):");
-          String priorityInput = stdin.readLineSync() ?? '';
-          Priority? priority;
-          switch (priorityInput.toLowerCase()) {
-            case 'low':
-              priority = Priority.low;
-              break;
-            case 'medium':
-              priority = Priority.medium;
-              break;
-            case 'high':
-              priority = Priority.high;
-              break;
-            default:
-              throw InvalidInputException(
-                'Invalid priority. Please choose low, medium, or high.',
-              );
-          }
+          final title = parseRequiredText(stdin.readLineSync(), 'Le titre');
 
-          UrgentTask newTask = UrgentTask(
+          print("Add a due date (YYYY-MM-DD) or leave empty for no due date:");
+          final dueDate = parseDueDate(stdin.readLineSync() ?? '');
+
+          print("Add a priority (low, medium, high):");
+          final priority = parsePriority(stdin.readLineSync() ?? '');
+
+          final newTask = UrgentTask(
             title: title,
             dueDate: dueDate,
             priority: priority,
