@@ -19,6 +19,7 @@ void main() {
       final json = task.toJson();
       final reloaded = UrgentTask.fromJson(json);
 
+      expect(reloaded.id, isNotEmpty);
       expect(reloaded.title, equals('Test task'));
       expect(reloaded.dueDate, equals(DateTime(2026, 12, 31)));
       expect(reloaded.isCompleted, isTrue);
@@ -37,7 +38,7 @@ void main() {
     });
 
     test('saves and loads tasks from JSON file', () async {
-      final repository = TaskRepository<UrgentTask>(
+      final repository = FileTaskRepository<UrgentTask>(
         UrgentTask.fromJson,
         filePath,
       );
@@ -56,7 +57,7 @@ void main() {
     });
 
     test('returns empty list when file is missing', () async {
-      final repository = TaskRepository<UrgentTask>(
+      final repository = FileTaskRepository<UrgentTask>(
         UrgentTask.fromJson,
         filePath,
       );
@@ -78,7 +79,7 @@ void main() {
     });
 
     test('init loads tasks from repository', () async {
-      final repository = TaskRepository<UrgentTask>(
+      final repository = FileTaskRepository<UrgentTask>(
         UrgentTask.fromJson,
         filePath,
       );
@@ -94,7 +95,7 @@ void main() {
     });
 
     test('markTaskAsCompleted updates task and saves it', () async {
-      final repository = TaskRepository<UrgentTask>(
+      final repository = FileTaskRepository<UrgentTask>(
         UrgentTask.fromJson,
         filePath,
       );
@@ -112,7 +113,7 @@ void main() {
     });
 
     test('getTasksByPriority filters tasks correctly', () async {
-      final repository = TaskRepository<UrgentTask>(
+      final repository = FileTaskRepository<UrgentTask>(
         UrgentTask.fromJson,
         filePath,
       );
@@ -131,7 +132,7 @@ void main() {
     });
 
     test('removeTask removes task and saves changes', () async {
-      final repository = TaskRepository<UrgentTask>(
+      final repository = FileTaskRepository<UrgentTask>(
         UrgentTask.fromJson,
         filePath,
       );
@@ -147,10 +148,47 @@ void main() {
       expect(loaded, isEmpty);
     });
 
+    test('markTaskAsCompletedById completes the correct task', () async {
+      final repository = FileTaskRepository<UrgentTask>(
+        UrgentTask.fromJson,
+        filePath,
+      );
+      final task = UrgentTask(
+        title: 'Complete by id',
+        priority: Priority.medium,
+      );
+      await repository.saveTasks([task]);
+
+      final service = TaskService<UrgentTask>(repository);
+      await service.init();
+      await service.markTaskAsCompletedById(task.id);
+
+      expect(service.getTaskById(task.id)?.isCompleted, isTrue);
+      final loaded = await repository.loadTasks();
+      expect(loaded.first.isCompleted, isTrue);
+    });
+
+    test('removeTaskById removes the correct task', () async {
+      final repository = FileTaskRepository<UrgentTask>(
+        UrgentTask.fromJson,
+        filePath,
+      );
+      final task = UrgentTask(title: 'Remove by id', priority: Priority.low);
+      await repository.saveTasks([task]);
+
+      final service = TaskService<UrgentTask>(repository);
+      await service.init();
+      await service.removeTaskById(task.id);
+
+      expect(service.tasks, isEmpty);
+      final loaded = await repository.loadTasks();
+      expect(loaded, isEmpty);
+    });
+
     test(
       'getTasksSortedByPriority returns tasks ordered by priority',
       () async {
-        final repository = TaskRepository<UrgentTask>(
+        final repository = FileTaskRepository<UrgentTask>(
           UrgentTask.fromJson,
           filePath,
         );
@@ -175,7 +213,7 @@ void main() {
     test(
       'getTasksSortedByDate orders tasks by due date with nulls last',
       () async {
-        final repository = TaskRepository<UrgentTask>(
+        final repository = FileTaskRepository<UrgentTask>(
           UrgentTask.fromJson,
           filePath,
         );

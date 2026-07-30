@@ -3,11 +3,18 @@ import 'dart:io'; // File, Directory
 import '../models/task.dart';
 import '../errors/task_exception.dart';
 
-class TaskRepository<T extends Task> {
+abstract class TaskRepository<T extends Task> {
+  Future<void> saveTasks(List<T> tasks);
+  Future<List<T>> loadTasks();
+}
+
+class FileTaskRepository<T extends Task> implements TaskRepository<T> {
   final T Function(Map<String, dynamic>) fromJson;
   final String _filePath;
 
-  TaskRepository(this.fromJson, [this._filePath = 'tasks.json']);
+  FileTaskRepository(this.fromJson, [this._filePath = 'tasks.json']);
+
+  @override
   Future<void> saveTasks(List<T> tasks) async {
     final file = File(_filePath);
     final jsonString = jsonEncode(tasks.map((task) => task.toJson()).toList());
@@ -19,6 +26,7 @@ class TaskRepository<T extends Task> {
     }
   }
 
+  @override
   Future<List<T>> loadTasks() async {
     final file = File(_filePath);
     if (await file.exists()) {

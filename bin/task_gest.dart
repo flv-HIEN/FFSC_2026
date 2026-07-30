@@ -1,7 +1,6 @@
 //import 'package:task_gest/task_gest.dart';
 import 'dart:io';
 import 'package:task_gest/src/models/priority.dart';
-//import 'package:task_gest/src/models/task.dart';
 import 'package:task_gest/src/models/urgent_task.dart';
 import 'package:task_gest/src/services/task_service.dart';
 import 'package:task_gest/src/repositories/task_repository.dart';
@@ -9,7 +8,7 @@ import 'package:task_gest/src/errors/task_exception.dart';
 
 Future<void> main(List<String> arguments) async {
   TaskService<UrgentTask> createTaskService() {
-    final repository = TaskRepository<UrgentTask>(UrgentTask.fromJson);
+    final repository = FileTaskRepository<UrgentTask>(UrgentTask.fromJson);
     return TaskService<UrgentTask>(repository);
   }
 
@@ -108,20 +107,18 @@ Future<void> main(List<String> arguments) async {
               ? task.dueDate!.toIso8601String()
               : 'no due date';
           final status = task.isCompleted ? 'completed' : 'pending';
-          print('- ${task.title} (${task.priority}, due: $due, $status)');
+          print(
+            '- [${task.id}] ${task.title} (${task.priority}, due: $due, $status)',
+          );
         }
         break;
       case 3:
         print("Marking a task as completed...");
-        print("Enter the title of the task to mark as completed:");
-        String title = stdin.readLineSync() ?? '';
+        print("Enter the id of the task to mark as completed:");
+        String idToMark = stdin.readLineSync() ?? '';
         try {
-          final taskToMark = service.tasks.firstWhere(
-            (task) => task.title == title,
-            orElse: () => throw TaskNotFoundException('Task not found'),
-          );
-          await service.markTaskAsCompleted(taskToMark);
-          print("Task ${taskToMark.title} marked as completed!");
+          await service.markTaskAsCompletedById(idToMark);
+          print("Task $idToMark marked as completed!");
         } on TaskException catch (e) {
           print('Task error: ${e.message}');
         } catch (e) {
@@ -130,15 +127,11 @@ Future<void> main(List<String> arguments) async {
         break;
       case 4:
         print("Removing a task...");
-        print("Enter the title of the task to remove:");
-        String titleToRemove = stdin.readLineSync() ?? '';
+        print("Enter the id of the task to remove:");
+        String idToRemove = stdin.readLineSync() ?? '';
         try {
-          final taskToRemove = service.tasks.firstWhere(
-            (task) => task.title == titleToRemove,
-            orElse: () => throw TaskNotFoundException('Task not found'),
-          );
-          await service.removeTask(taskToRemove);
-          print('Task ${taskToRemove.title} removed successfully.');
+          await service.removeTaskById(idToRemove);
+          print('Task $idToRemove removed successfully.');
         } on TaskException catch (e) {
           print('Task error: ${e.message}');
         } catch (e) {

@@ -23,6 +23,16 @@ class TaskService<T extends Task> implements TaskServiceInterface<T> {
   }
 
   @override
+  T? getTaskById(String id) {
+    for (final task in _tasks) {
+      if (task.id == id) {
+        return task;
+      }
+    }
+    return null;
+  }
+
+  @override
   List<T> getTasksByPriority(Priority priority) {
     return _tasks.where((task) => task.priority == priority).toList();
   }
@@ -48,7 +58,7 @@ class TaskService<T extends Task> implements TaskServiceInterface<T> {
 
   @override
   Future<void> markTaskAsCompleted(T task) async {
-    final index = _tasks.indexOf(task);
+    final index = _tasks.indexWhere((t) => t.id == task.id);
     if (index == -1) {
       throw TaskNotFoundException('La tâche "${task.title}" est introuvable.');
     }
@@ -69,11 +79,24 @@ class TaskService<T extends Task> implements TaskServiceInterface<T> {
   }
 
   @override
+  Future<void> markTaskAsCompletedById(String id) async {
+    final task = getTaskById(id);
+    if (task == null) {
+      throw TaskNotFoundException(
+        'Aucune tâche trouvée avec l’identifiant "$id".',
+      );
+    }
+    await markTaskAsCompleted(task);
+  }
+
+  @override
   Future<void> removeTask(T task) async {
-    final removed = _tasks.remove(task);
-    if (!removed) {
+    final index = _tasks.indexWhere((t) => t.id == task.id);
+    if (index == -1) {
       throw TaskNotFoundException('La tâche "${task.title}" est introuvable.');
     }
+
+    _tasks.removeAt(index);
 
     try {
       await _taskRepository.saveTasks(tasks);
@@ -83,5 +106,16 @@ class TaskService<T extends Task> implements TaskServiceInterface<T> {
         'Impossible de sauvegarder la suppression de la tâche.',
       );
     }
+  }
+
+  @override
+  Future<void> removeTaskById(String id) async {
+    final task = getTaskById(id);
+    if (task == null) {
+      throw TaskNotFoundException(
+        'Aucune tâche trouvée avec l’identifiant "$id".',
+      );
+    }
+    await removeTask(task);
   }
 }
